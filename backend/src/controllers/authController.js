@@ -7,20 +7,32 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizeCode = (value) => String(value || '').trim().toUpperCase();
 const normalizeString = (value) => String(value || '').trim();
 const MIN_PASSWORD_LENGTH = 8;
+const ALLOWED_GRADE_VALUES = new Set(Array.from({ length: 12 }, (_, i) => String(i + 1)));
+
+const normalizeGradeValue = (value) => {
+  const trimmed = normalizeString(value);
+  if (!trimmed) return null;
+  const numeric = Number(trimmed);
+  if (!Number.isInteger(numeric)) return null;
+  const asString = String(numeric);
+  return ALLOWED_GRADE_VALUES.has(asString) ? asString : null;
+};
 
 export const createSchool = async (req, res) => {
   try {
     await connectDB();
-    let { schoolName, adminName, adminEmail, password } = req.body;
+    let { schoolName, adminName, adminEmail, password, provider } = req.body;
 
     schoolName = normalizeString(schoolName);
     adminName = normalizeString(adminName);
     adminEmail = normalizeEmail(adminEmail);
+    provider = normalizeString(provider);
+    const isSocial = provider === 'google';
 
-    if (!schoolName || !adminEmail || !password) {
+    if (!schoolName || !adminEmail || (!password && !isSocial)) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-    if (password.length < MIN_PASSWORD_LENGTH) {
+    if (password && password.length < MIN_PASSWORD_LENGTH) {
       return res
         .status(400)
         .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
@@ -39,7 +51,9 @@ export const createSchool = async (req, res) => {
       role: 'schoolAdmin',
       school: school._id,
     });
-    await admin.setPassword(password);
+    if (password) {
+      await admin.setPassword(password);
+    }
     await admin.save();
 
     school.createdBy = admin._id;
@@ -47,7 +61,7 @@ export const createSchool = async (req, res) => {
 
     return res.status(201).json({
       school: { id: String(school._id), name: school.name, code: school.code },
-      admin: { id: String(admin._id), email: admin.email },
+      admin: { id: String(admin._id), email: admin.email, name: admin.name },
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
@@ -57,16 +71,18 @@ export const createSchool = async (req, res) => {
 export const createNgo = async (req, res) => {
   try {
     await connectDB();
-    let { ngoName, adminName, adminEmail, password } = req.body;
+    let { ngoName, adminName, adminEmail, password, provider } = req.body;
 
     ngoName = normalizeString(ngoName);
     adminName = normalizeString(adminName);
     adminEmail = normalizeEmail(adminEmail);
+    provider = normalizeString(provider);
+    const isSocial = provider === 'google';
 
-    if (!ngoName || !adminEmail || !password) {
+    if (!ngoName || !adminEmail || (!password && !isSocial)) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-    if (password.length < MIN_PASSWORD_LENGTH) {
+    if (password && password.length < MIN_PASSWORD_LENGTH) {
       return res
         .status(400)
         .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
@@ -85,7 +101,9 @@ export const createNgo = async (req, res) => {
       role: 'ngoAdmin',
       ngo: ngo._id,
     });
-    await admin.setPassword(password);
+    if (password) {
+      await admin.setPassword(password);
+    }
     await admin.save();
 
     ngo.createdBy = admin._id;
@@ -93,7 +111,7 @@ export const createNgo = async (req, res) => {
 
     return res.status(201).json({
       ngo: { id: String(ngo._id), name: ngo.name, code: ngo.code },
-      admin: { id: String(admin._id), email: admin.email },
+      admin: { id: String(admin._id), email: admin.email, name: admin.name },
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
@@ -103,12 +121,14 @@ export const createNgo = async (req, res) => {
 export const joinSchool = async (req, res) => {
   try {
     await connectDB();
-    let { code, role, name, email, password, grade } = req.body;
+    let { code, role, name, email, password, grade, teacherBio } = req.body;
 
     code = normalizeCode(code);
     email = normalizeEmail(email);
     name = normalizeString(name);
     role = normalizeString(role);
+    teacherBio = normalizeString(teacherBio);
+    const gradeValue = normalizeGradeValue(grade);
 
     if (!code || !email || !password || !role) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -120,6 +140,12 @@ export const joinSchool = async (req, res) => {
       return res
         .status(400)
         .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+    }
+    if (role === 'student' && !gradeValue) {
+      return res.status(400).json({ error: 'Grade must be a number between 1 and 12' });
+    }
+    if (role === 'teacher' && !teacherBio) {
+      return res.status(400).json({ error: 'Bio is required for teachers' });
     }
 
     const school = await School.findOne({ code });
@@ -137,7 +163,8 @@ export const joinSchool = async (req, res) => {
       email,
       role,
       school: school._id,
-      student: role === 'student' && grade ? { grade: normalizeString(grade) } : undefined,
+      student: role === 'student' ? { grade: gradeValue } : undefined,
+      teacher: role === 'teacher' ? { bio: teacherBio } : undefined,
     });
     await user.setPassword(password);
     await user.save();
@@ -150,6 +177,9 @@ export const joinSchool = async (req, res) => {
         role: user.role,
         schoolId: String(school._id),
         grade: user.student?.grade || null,
+        teacherBio: user.teacher?.bio || null,
+        orgType: 'SCHOOL',
+        orgId: String(school._id),
       },
     });
   } catch (error) {
@@ -160,18 +190,26 @@ export const joinSchool = async (req, res) => {
 export const joinSchoolSocial = async (req, res) => {
   try {
     await connectDB();
-    let { code, role, name, email, grade } = req.body;
+    let { code, role, name, email, grade, teacherBio } = req.body;
 
     code = normalizeCode(code);
     email = normalizeEmail(email);
     name = normalizeString(name);
     role = normalizeString(role);
+    const gradeValue = normalizeGradeValue(grade);
+    teacherBio = normalizeString(teacherBio);
 
     if (!code || !email || !role) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     if (!['student', 'teacher', 'schoolAdmin'].includes(role)) {
       return res.status(400).json({ error: 'Invalid role for school' });
+    }
+    if (role === 'student' && !gradeValue) {
+      return res.status(400).json({ error: 'Grade must be a number between 1 and 12' });
+    }
+    if (role === 'teacher' && !teacherBio) {
+      return res.status(400).json({ error: 'Bio is required for teachers' });
     }
 
     const school = await School.findOne({ code });
@@ -187,7 +225,8 @@ export const joinSchoolSocial = async (req, res) => {
         email,
         role,
         school: school._id,
-        student: role === 'student' && grade ? { grade: normalizeString(grade) } : undefined,
+        student: role === 'student' ? { grade: gradeValue } : undefined,
+        teacher: role === 'teacher' ? { bio: teacherBio } : undefined,
       });
       await user.save();
     } else {
@@ -196,8 +235,13 @@ export const joinSchoolSocial = async (req, res) => {
       }
       user.role = role;
       user.school = school._id;
-      if (role === 'student' && grade) {
-        user.student = { grade: normalizeString(grade) };
+      if (role === 'student') {
+        user.student = { grade: gradeValue };
+        user.teacher = undefined;
+      }
+      if (role === 'teacher') {
+        user.teacher = { bio: teacherBio };
+        user.student = undefined;
       }
       await user.save();
     }
@@ -205,10 +249,14 @@ export const joinSchoolSocial = async (req, res) => {
     return res.status(200).json({
       user: {
         id: String(user._id),
+        name: user.name,
         email: user.email,
         role: user.role,
         schoolId: String(school._id),
         grade: user.student?.grade || null,
+        teacherBio: user.teacher?.bio || null,
+        orgType: 'SCHOOL',
+        orgId: String(school._id),
       },
     });
   } catch (error) {
@@ -249,6 +297,7 @@ export const login = async (req, res) => {
       orgType,
       orgId: orgId ? String(orgId) : null,
       grade: user.student?.grade || null,
+      teacherBio: user.teacher?.bio || null,
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });
