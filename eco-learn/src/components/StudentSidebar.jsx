@@ -7,6 +7,7 @@ const navItems = [
   { name: "Leaderboard", href: "/dashboard/student/leaderboard", icon: "🏅" },
   { name: "Badges", href: "/dashboard/student/badges", icon: "🎖️" },
   { name: "Notifications", href: "/dashboard/student/notifications", icon: "🔔" },
+  { name: "Blog Posts", href: "/dashboard/blog", icon: "📝" },
   { name: "Profile", href: "/dashboard/student/profile", icon: "👤" },
 ];
 

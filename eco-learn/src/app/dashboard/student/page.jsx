@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentAssignedTasks from "@/components/StudentAssignedTasks";
+import { PieCard, BarCard } from "@/components/Charts";
 import authOptions from "@/lib/auth/options";
 import UserMenu from "@/components/UserMenu";
 
@@ -20,6 +21,13 @@ export default async function StudentDashboardPage() {
   const welcomeName = user.name || "Eco Warrior";
   const gradeLabel = user.grade ? "Grade " + user.grade : "Explorer";
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const overviewRes = await fetch(`${apiUrl}/students/${user.id}/overview`, { cache: "no-store" }).catch(() => null);
+  let overview = { counts: { accepted: 0, pending: 0, rejected: 0 }, totalPoints: 0, week: { labels: [], points: [] } };
+  if (overviewRes && overviewRes.ok) {
+    try { overview = await overviewRes.json(); } catch {}
+  }
+
   return (
     <div className="flex min-h-screen bg-emerald-50/60">
       <StudentSidebar />
@@ -37,6 +45,21 @@ export default async function StudentDashboardPage() {
         </header>
 
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-8">
+          {/* Overview cards with charts */}
+          <section className="grid gap-4 md:grid-cols-3">
+            <PieCard title="Task status" labels={["Accepted","Pending","Rejected"]} data={[overview.counts.accepted, overview.counts.pending, overview.counts.rejected]} />
+            <BarCard title="Points over weeks" labels={overview.week.labels} seriesLabel="Points" data={overview.week.points} />
+            <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">Quick stats</p>
+              <ul className="mt-3 space-y-1 text-sm text-slate-700">
+                <li>Total points: {overview.totalPoints}</li>
+                <li>Completed tasks: {overview.counts.accepted}</li>
+                <li>Pending tasks: {overview.counts.pending}</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* Manage Tasks */}
           <section className="rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 p-6 text-white shadow-lg">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>

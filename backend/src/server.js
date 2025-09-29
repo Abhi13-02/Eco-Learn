@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js';
 import uploadRoutes from './routes/uploads.js';
 import teacherRoutes from './routes/teacher.js';
+import studentRoutes from './routes/students.js';
 import blogRoutes from './routes/blogs.js';
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
 app.use('/uploads', uploadRoutes);
 app.use('/teacher', teacherRoutes);
+app.use('/students', studentRoutes);
 app.use('/blogs', blogRoutes);
 
 // Boot

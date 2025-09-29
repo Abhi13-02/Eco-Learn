@@ -10,6 +10,8 @@ router.get('/assigned', getAssignedTasks);
 router.post('/:taskId/submissions', createTaskSubmission);
 router.patch('/:taskId/submissions', updateTaskSubmission);
 router.delete('/:taskId/submissions/attachment', deleteSubmissionAttachment);
+// Support both PATCH and POST for compatibility with some clients
 router.patch('/submissions/:submissionId/review', reviewSubmission);
+router.post('/submissions/:submissionId/review', reviewSubmission);
 
 export default router;
