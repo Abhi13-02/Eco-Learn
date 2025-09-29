@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import { connectDB } from './lib/db.js';
 import authRoutes from './routes/auth.js';
+import taskRoutes from './routes/tasks.js';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/tasks', taskRoutes);
 
 // Boot
 const port = process.env.PORT || 4000;

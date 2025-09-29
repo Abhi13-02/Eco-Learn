@@ -4,6 +4,7 @@ import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 import { getDashboardPath } from "@/lib/dashboardRoutes";
+import { showErrorToast, showSuccessToast, showInfoToast } from "@/lib/toast";
 
 const roleOptions = [
   {
@@ -37,12 +38,10 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState(roleOptions[0].id);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(event) {
     event.preventDefault();
-    setError("");
     setLoading(true);
     const result = await signIn("credentials", {
       email,
@@ -52,7 +51,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Invalid email or password");
+      showErrorToast("Invalid email or password");
       return;
     }
 
@@ -60,6 +59,7 @@ export default function LoginPage() {
     const role = session?.user?.role || selectedRole;
     const destination = getDashboardPath(role);
 
+    showSuccessToast("Signed in successfully");
     router.push(destination);
     router.refresh();
   }
@@ -148,9 +148,6 @@ export default function LoginPage() {
               />
             </div>
           </div>
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
           <button
             type="submit"
             disabled={loading}
@@ -169,13 +166,24 @@ export default function LoginPage() {
           </div>
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={() => {
+              showInfoToast("Redirecting to Google sign-in...");
+              const target = `/dashboard?role=${selectedRole}`;
+              signIn("google", { callbackUrl: target });
+            }}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-emerald-200 hover:text-emerald-600"
           >
             <span className="text-lg">🔗</span>
             <span>Sign in with Google</span>
           </button>
         </div>
+
+        <p className="text-center text-sm text-slate-500">
+          New user?{" "}
+          <a href="/signup" className="font-semibold text-emerald-600 hover:text-emerald-500">
+            Create an account
+          </a>
+        </p>
       </div>
     </main>
   );

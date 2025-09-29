@@ -65,6 +65,14 @@ export const authOptions = {
         session.user.orgId = token.orgId;
         session.user.grade = token.grade;
         session.user.teacherBio = token.teacherBio;
+        
+        // Log session data for debugging
+        console.log("NextAuth session:", {
+          id: session.user.id,
+          role: session.user.role,
+          orgType: session.user.orgType,
+          orgId: session.user.orgId
+        });
       }
       return session;
     },

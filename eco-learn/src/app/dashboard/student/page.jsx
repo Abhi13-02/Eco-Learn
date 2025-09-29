@@ -1,26 +1,79 @@
-import DashboardShell from "@/components/dashboard/DashboardShell";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import StudentSidebar from "@/components/StudentSidebar";
+import StudentAssignedTasks from "@/components/StudentAssignedTasks";
+import authOptions from "@/lib/auth/options";
 
-export const metadata = {
-  title: "Student Dashboard | Eco-Learn",
-};
+export default async function StudentDashboardPage() {
+  const session = await getServerSession(authOptions);
 
-export default function StudentDashboardPage() {
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const { user } = session;
+  if (user.role !== "student") {
+    redirect("/");
+  }
+
+  const welcomeName = user.name || "Eco Warrior";
+  const gradeLabel = user.grade ? "Grade " + user.grade : "Explorer";
+
   return (
-    <DashboardShell
-      title="Student Dashboard"
-      subtitle="Track your progress, explore new eco-missions, and celebrate wins with your classmates."
-      accent="🎓"
-    >
-      <div className="grid gap-4 text-slate-600">
-        <p>
-          Welcome back! Soon this space will highlight your current challenges, showcase recent achievements, and
-          recommend lessons tailored to your grade.
-        </p>
-        <p>
-          While we build the full experience, use this page as your home base after signing in. From here you will
-          launch lessons, view leaderboards, and connect with your eco-team.
-        </p>
-      </div>
-    </DashboardShell>
+    <div className="flex min-h-screen bg-emerald-50/60">
+      <StudentSidebar />
+
+      <main className="flex-1 overflow-y-auto bg-slate-50/60">
+        <header className="border-b border-emerald-100 bg-white/95 px-4 py-4 shadow-sm sm:px-8">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+            <div>
+              <p className="text-xs uppercase tracking-[0.35em] text-emerald-500">EcoLearn</p>
+              <h1 className="mt-1 text-2xl font-bold text-slate-900">Student hub</h1>
+              <p className="text-sm text-slate-500">Complete missions, earn points, and rise on the leaderboard.</p>
+            </div>
+            <div className="flex items-center gap-3 rounded-3xl bg-white px-4 py-2 shadow-sm">
+              <div className="h-10 w-10 rounded-full bg-emerald-100" />
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{welcomeName}</p>
+                <p className="text-xs text-emerald-500 capitalize">{gradeLabel}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-8">
+          <section className="rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 p-6 text-white shadow-lg">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold">Welcome back, {welcomeName}! 🌿</p>
+                <h2 className="mt-2 text-3xl font-bold">Ready for your next challenge?</h2>
+                <p className="mt-2 max-w-xl text-sm text-emerald-50">
+                  Complete tasks to earn points, unlock badges, and inspire your classmates with eco-friendly actions.
+                </p>
+              </div>
+              <div className="grid gap-3 text-slate-900 md:grid-cols-3">
+                <div className="rounded-2xl bg-white/90 p-4 text-center shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Current streak</p>
+                  <p className="mt-1 text-2xl font-bold">3 days</p>
+                  <p className="text-[11px] text-slate-500">Keep the momentum</p>
+                </div>
+                <div className="rounded-2xl bg-white/90 p-4 text-center shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Points</p>
+                  <p className="mt-1 text-2xl font-bold">120</p>
+                  <p className="text-[11px] text-slate-500">Closer to next badge</p>
+                </div>
+                <div className="rounded-2xl bg-white/90 p-4 text-center shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Badges</p>
+                  <p className="mt-1 text-2xl font-bold">2</p>
+                  <p className="text-[11px] text-slate-500">Collect them all</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <StudentAssignedTasks />
+        </div>
+      </main>
+    </div>
   );
 }

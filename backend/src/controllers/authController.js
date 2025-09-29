@@ -304,10 +304,72 @@ export const login = async (req, res) => {
   }
 };
 
+export const getSchoolDetails = async (req, res) => {
+  try {
+    await connectDB();
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'School id is required' });
+    }
+
+    const school = await School.findById(id).lean();
+    if (!school) {
+      return res.status(404).json({ error: 'School not found' });
+    }
+
+    return res.json({
+      id: String(school._id),
+      name: school.name,
+      code: school.code,
+      createdBy: school.createdBy ? String(school.createdBy) : null,
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+/**
+ * Convenience endpoint: fetch a school by its admin's email.
+ * Useful when the session does not yet contain orgId/orgType but we do know the email.
+ */
+export const getSchoolByAdminEmail = async (req, res) => {
+  try {
+    await connectDB();
+    const email = String(req.query.email || '').trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email }).lean();
+    if (!user) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+    if (!user.school) {
+      return res.status(404).json({ error: 'User is not linked to any school' });
+    }
+
+    const school = await School.findById(user.school).lean();
+    if (!school) {
+      return res.status(404).json({ error: 'School not found' });
+    }
+
+    return res.json({
+      id: String(school._id),
+      name: school.name,
+      code: school.code,
+      createdBy: school.createdBy ? String(school.createdBy) : null,
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
 export default {
   createSchool,
   createNgo,
   joinSchool,
   joinSchoolSocial,
   login,
+  getSchoolDetails,
+  getSchoolByAdminEmail,
 };

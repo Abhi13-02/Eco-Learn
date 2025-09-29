@@ -4,6 +4,7 @@ import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 import { getDashboardPath } from "@/lib/dashboardRoutes";
+import { showErrorToast, showSuccessToast, showInfoToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const GRADE_OPTIONS = Array.from({ length: 12 }, (_, index) => String(index + 1));
@@ -320,7 +321,6 @@ export default function SignupPage() {
     });
     return initial;
   });
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const config = SIGNUP_CONFIG[activeRole];
@@ -345,12 +345,10 @@ export default function SignupPage() {
       ...prev,
       [activeRole]: method,
     }));
-    setError("");
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setError("");
 
     if (signupMethod === "google") {
       handleGoogleSignup();
@@ -367,7 +365,7 @@ export default function SignupPage() {
     });
 
     if (missing.length > 0) {
-      setError("Please fill in all required fields for this role.");
+      showErrorToast("Please fill in all required fields for this role.");
       return;
     }
 
@@ -397,10 +395,11 @@ export default function SignupPage() {
       const role = session?.user?.role || activeRole;
       const destination = getDashboardPath(role);
 
+      showSuccessToast("Account created successfully");
       router.push(destination);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
+      showErrorToast(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setLoading(false);
     }
@@ -408,7 +407,7 @@ export default function SignupPage() {
 
   function handleGoogleSignup() {
     if (!config.supportsGoogle || !config.buildGooglePayload) {
-      setError("Google sign-up is not available for this role.");
+      showErrorToast("Google sign-up is not available for this role.");
       return;
     }
 
@@ -418,17 +417,19 @@ export default function SignupPage() {
       return !String(fieldValue ?? "").trim();
     });
     if (missing.length > 0) {
-      setError(config.googleWarning || "Please complete the highlighted fields before continuing with Google.");
+      showErrorToast(
+        config.googleWarning || "Please complete the highlighted fields before continuing with Google."
+      );
       return;
     }
 
-    setError("");
     const payload = config.buildGooglePayload(activeForm);
     try {
       window.localStorage.setItem("onboard", JSON.stringify(payload));
+      showInfoToast("Redirecting to Google sign-up...");
       signIn("google", { callbackUrl: "/onboard" });
     } catch (err) {
-      setError("Unable to open Google sign-up. Please try again.");
+      showErrorToast("Unable to open Google sign-up. Please try again.");
     }
   }
 
@@ -457,7 +458,6 @@ export default function SignupPage() {
                   type="button"
                   onClick={() => {
                     setActiveRole(role);
-                    setError("");
                   }}
                   className={baseClass + " " + (isActive ? activeClass : inactiveClass)}
                 >
@@ -581,9 +581,6 @@ export default function SignupPage() {
                 </div>
               );
             })}
-
-            {error && <p className="text-sm text-red-600">{error}</p>}
-
             <button
               type="submit"
               disabled={signupMethod !== "google" && loading}
@@ -594,6 +591,13 @@ export default function SignupPage() {
           </form>
         </section>
       </div>
+
+      <p className="mt-6 text-center text-sm text-slate-500">
+        Already have an account?{' '}
+        <a href="/login" className="font-semibold text-emerald-600 hover:text-emerald-500">
+          Sign in here
+        </a>
+      </p>
     </main>
   );
 }

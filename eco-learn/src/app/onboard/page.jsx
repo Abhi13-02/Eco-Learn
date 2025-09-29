@@ -1,22 +1,22 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 import { getDashboardPath } from "@/lib/dashboardRoutes";
+import { showErrorToast, showSuccessToast } from "@/lib/toast";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function OnboardPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
-  const [error, setError] = useState("");
 
   useEffect(() => {
     async function finalizeOnboarding() {
       if (status === "loading") return;
       if (status !== "authenticated") {
-        setError("You need to be signed in to finish onboarding.");
+        showErrorToast("You need to be signed in to finish onboarding.");
         return;
       }
 
@@ -35,7 +35,7 @@ export default function OnboardPage() {
       }
 
       if (!parsed || !parsed.role) {
-        setError("Signup details were incomplete. Please start over.");
+        showErrorToast("Signup details were incomplete. Please start over.");
         localStorage.removeItem("onboard");
         return;
       }
@@ -48,7 +48,7 @@ export default function OnboardPage() {
       if (role === "student" || role === "teacher") {
         const code = typeof parsed.code === "string" ? parsed.code.trim() : "";
         if (!code) {
-          setError("Missing school code. Please start the signup again.");
+          showErrorToast("Missing school code. Please start the signup again.");
           localStorage.removeItem("onboard");
           return;
         }
@@ -63,7 +63,7 @@ export default function OnboardPage() {
         if (role === "student") {
           const grade = parsed.grade ? String(parsed.grade).trim() : "";
           if (!grade) {
-            setError("Grade is required to finish student onboarding. Please start again.");
+            showErrorToast("Grade is required to finish student onboarding. Please start again.");
             localStorage.removeItem("onboard");
             return;
           }
@@ -73,7 +73,7 @@ export default function OnboardPage() {
         if (role === "teacher") {
           const teacherBio = typeof parsed.teacherBio === "string" ? parsed.teacherBio.trim() : "";
           if (!teacherBio) {
-            setError("Teacher bio is required to finish onboarding. Please start again.");
+            showErrorToast("Teacher bio is required to finish onboarding. Please start again.");
             localStorage.removeItem("onboard");
             return;
           }
@@ -105,7 +105,7 @@ export default function OnboardPage() {
           ? parsed.adminName.trim()
           : currentUser.name || currentUser.email;
         if (!schoolName) {
-          setError("School name is required. Please start again.");
+          showErrorToast("School name is required. Please start again.");
           localStorage.removeItem("onboard");
           return;
         }
@@ -141,7 +141,7 @@ export default function OnboardPage() {
           ? parsed.adminName.trim()
           : currentUser.name || currentUser.email;
         if (!ngoName) {
-          setError("NGO name is required. Please start again.");
+          showErrorToast("NGO name is required. Please start again.");
           localStorage.removeItem("onboard");
           return;
         }
@@ -172,7 +172,7 @@ export default function OnboardPage() {
           };
         };
       } else {
-        setError("Unsupported signup role. Please start again.");
+        showErrorToast("Unsupported signup role. Please start again.");
         localStorage.removeItem("onboard");
         return;
       }
@@ -198,8 +198,9 @@ export default function OnboardPage() {
 
         localStorage.removeItem("onboard");
         router.replace(destination);
+        showSuccessToast("You're all set! Redirecting to your dashboard...");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Onboarding failed");
+        showErrorToast(err instanceof Error ? err.message : "Onboarding failed");
       }
     }
 
@@ -209,7 +210,6 @@ export default function OnboardPage() {
   return (
     <main className="p-6 space-y-2">
       <p>Finalizing your account...</p>
-      {error && <p className="text-red-600">{error}</p>}
     </main>
   );
 }
