@@ -1,0 +1,264 @@
+// src/controllers/authController.js
+import bcrypt from 'bcryptjs';
+import { connectDB } from '../lib/db.js';
+import { School, Ngo, User } from '../models/users.js';
+
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const normalizeCode = (value) => String(value || '').trim().toUpperCase();
+const normalizeString = (value) => String(value || '').trim();
+const MIN_PASSWORD_LENGTH = 8;
+
+export const createSchool = async (req, res) => {
+  try {
+    await connectDB();
+    let { schoolName, adminName, adminEmail, password } = req.body;
+
+    schoolName = normalizeString(schoolName);
+    adminName = normalizeString(adminName);
+    adminEmail = normalizeEmail(adminEmail);
+
+    if (!schoolName || !adminEmail || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return res
+        .status(400)
+        .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+    }
+
+    const existing = await User.findOne({ email: adminEmail }).lean();
+    if (existing) {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
+
+    const school = await School.create({ name: schoolName });
+
+    const admin = new User({
+      name: adminName || adminEmail,
+      email: adminEmail,
+      role: 'schoolAdmin',
+      school: school._id,
+    });
+    await admin.setPassword(password);
+    await admin.save();
+
+    school.createdBy = admin._id;
+    await school.save();
+
+    return res.status(201).json({
+      school: { id: String(school._id), name: school.name, code: school.code },
+      admin: { id: String(admin._id), email: admin.email },
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+export const createNgo = async (req, res) => {
+  try {
+    await connectDB();
+    let { ngoName, adminName, adminEmail, password } = req.body;
+
+    ngoName = normalizeString(ngoName);
+    adminName = normalizeString(adminName);
+    adminEmail = normalizeEmail(adminEmail);
+
+    if (!ngoName || !adminEmail || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return res
+        .status(400)
+        .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+    }
+
+    const existing = await User.findOne({ email: adminEmail }).lean();
+    if (existing) {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
+
+    const ngo = await Ngo.create({ name: ngoName });
+
+    const admin = new User({
+      name: adminName || adminEmail,
+      email: adminEmail,
+      role: 'ngoAdmin',
+      ngo: ngo._id,
+    });
+    await admin.setPassword(password);
+    await admin.save();
+
+    ngo.createdBy = admin._id;
+    await ngo.save();
+
+    return res.status(201).json({
+      ngo: { id: String(ngo._id), name: ngo.name, code: ngo.code },
+      admin: { id: String(admin._id), email: admin.email },
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+export const joinSchool = async (req, res) => {
+  try {
+    await connectDB();
+    let { code, role, name, email, password, grade } = req.body;
+
+    code = normalizeCode(code);
+    email = normalizeEmail(email);
+    name = normalizeString(name);
+    role = normalizeString(role);
+
+    if (!code || !email || !password || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (!['student', 'teacher'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be student or teacher' });
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return res
+        .status(400)
+        .json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+    }
+
+    const school = await School.findOne({ code });
+    if (!school) {
+      return res.status(404).json({ error: 'Invalid school code' });
+    }
+
+    const existing = await User.findOne({ email }).lean();
+    if (existing) {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
+
+    const user = new User({
+      name: name || email,
+      email,
+      role,
+      school: school._id,
+      student: role === 'student' && grade ? { grade: normalizeString(grade) } : undefined,
+    });
+    await user.setPassword(password);
+    await user.save();
+
+    return res.status(201).json({
+      user: {
+        id: String(user._id),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        schoolId: String(school._id),
+        grade: user.student?.grade || null,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+export const joinSchoolSocial = async (req, res) => {
+  try {
+    await connectDB();
+    let { code, role, name, email, grade } = req.body;
+
+    code = normalizeCode(code);
+    email = normalizeEmail(email);
+    name = normalizeString(name);
+    role = normalizeString(role);
+
+    if (!code || !email || !role) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (!['student', 'teacher', 'schoolAdmin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role for school' });
+    }
+
+    const school = await School.findOne({ code });
+    if (!school) {
+      return res.status(404).json({ error: 'Invalid school code' });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        name: name || email,
+        email,
+        role,
+        school: school._id,
+        student: role === 'student' && grade ? { grade: normalizeString(grade) } : undefined,
+      });
+      await user.save();
+    } else {
+      if (user.ngo) {
+        return res.status(400).json({ error: 'User already belongs to an NGO' });
+      }
+      user.role = role;
+      user.school = school._id;
+      if (role === 'student' && grade) {
+        user.student = { grade: normalizeString(grade) };
+      }
+      await user.save();
+    }
+
+    return res.status(200).json({
+      user: {
+        id: String(user._id),
+        email: user.email,
+        role: user.role,
+        schoolId: String(school._id),
+        grade: user.student?.grade || null,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    await connectDB();
+    const email = normalizeEmail(req.body.email);
+    const password = normalizeString(req.body.password);
+
+    const user = await User.findOne({ email });
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    if (!user.isActive) {
+      return res.status(403).json({ error: 'Account disabled' });
+    }
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    const orgType = user.school ? 'SCHOOL' : user.ngo ? 'NGO' : null;
+    const orgId = user.school || user.ngo || null;
+
+    return res.json({
+      id: String(user._id),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      orgType,
+      orgId: orgId ? String(orgId) : null,
+      grade: user.student?.grade || null,
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+export default {
+  createSchool,
+  createNgo,
+  joinSchool,
+  joinSchoolSocial,
+  login,
+};
