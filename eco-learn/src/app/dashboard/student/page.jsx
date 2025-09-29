@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentAssignedTasks from "@/components/StudentAssignedTasks";
 import authOptions from "@/lib/auth/options";
+import UserMenu from "@/components/UserMenu";
 
 export default async function StudentDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -31,13 +32,7 @@ export default async function StudentDashboardPage() {
               <h1 className="mt-1 text-2xl font-bold text-slate-900">Student hub</h1>
               <p className="text-sm text-slate-500">Complete missions, earn points, and rise on the leaderboard.</p>
             </div>
-            <div className="flex items-center gap-3 rounded-3xl bg-white px-4 py-2 shadow-sm">
-              <div className="h-10 w-10 rounded-full bg-emerald-100" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">{welcomeName}</p>
-                <p className="text-xs text-emerald-500 capitalize">{gradeLabel}</p>
-              </div>
-            </div>
+            <UserMenu name={welcomeName} roleLabel={gradeLabel} points={120} badges={2} />
           </div>
         </header>
 

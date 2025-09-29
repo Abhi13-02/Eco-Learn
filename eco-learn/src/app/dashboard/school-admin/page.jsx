@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import UserMenu from "@/components/UserMenu";
 import SchoolCodeCard from "@/components/dashboard/SchoolCodeCard";
 import authOptions from "@/lib/auth/options";
 
@@ -82,6 +83,9 @@ export default async function SchoolAdminDashboardPage() {
       accent="🏫"
     >
       <div className="grid gap-6 text-slate-600">
+        <div className="flex items-center justify-end">
+          <UserMenu name={user.name || user.email} roleLabel="School Admin" points={0} badges={0} />
+        </div>
         <SchoolCodeCard code={schoolCode} />
         {fetchError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 shadow-sm">

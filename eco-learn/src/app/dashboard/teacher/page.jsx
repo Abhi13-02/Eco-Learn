@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import TeacherSidebar from "@/components/TeacherSidebar";
 import CreateTaskForm from "@/components/CreateTaskForm";
 import authOptions from "@/lib/auth/options";
+import UserMenu from "@/components/UserMenu";
 
 const allowedRoles = new Set(["teacher", "schoolAdmin"]);
 
@@ -32,13 +33,7 @@ export default async function TeacherDashboardPage() {
               <h1 className="mt-1 text-2xl font-bold text-slate-900">Teacher hub</h1>
               <p className="text-sm text-slate-500">Manage your class, track progress, and launch new eco missions.</p>
             </div>
-            <div className="flex items-center gap-3 rounded-3xl bg-white px-4 py-2 shadow-sm">
-              <div className="h-10 w-10 rounded-full bg-emerald-100" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800">{welcomeName}</p>
-                <p className="text-xs text-emerald-500 capitalize">{user.role === "schoolAdmin" ? "School Admin" : "Teacher"}</p>
-              </div>
-            </div>
+            <UserMenu name={welcomeName} roleLabel={user.role === "schoolAdmin" ? "School Admin" : "Teacher"} points={2450} badges={3} />
           </div>
         </header>
 

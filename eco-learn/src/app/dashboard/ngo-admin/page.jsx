@@ -1,4 +1,5 @@
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import UserMenu from "@/components/UserMenu";
 
 export const metadata = {
   title: "NGO Admin Dashboard | Eco-Learn",
@@ -12,6 +13,9 @@ export default function NgoAdminDashboardPage() {
       accent="🌍"
     >
       <div className="grid gap-4 text-slate-600">
+        <div className="flex items-center justify-end">
+          <UserMenu name="NGO Admin" roleLabel="NGO Admin" points={0} badges={0} />
+        </div>
         <p>
           We are preparing tailored tools to help you manage volunteers, document events, and share success stories
           across partner schools.

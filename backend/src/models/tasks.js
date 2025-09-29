@@ -10,6 +10,7 @@ const AssetSchema = new Schema(
     url: { type: String, required: true },
     name: { type: String, trim: true },
     size: { type: Number }, // in bytes
+    key: { type: String, trim: true }, // storage key in R2 (needed for deletes)
     meta: { type: Schema.Types.Mixed },
   },
   { _id: false }
