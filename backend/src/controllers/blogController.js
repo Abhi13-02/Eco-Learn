@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { connectDB } from '../lib/db.js';
 import { BlogPost, BlogComment, BlogReaction } from '../models/blog.js';
 import { User } from '../models/users.js';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 const { Types } = mongoose;
 
@@ -194,6 +195,7 @@ export const listBlogPosts = async (req, res) => {
         .sort({ publishedAt: -1, createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
+        .populate('author', 'name image')
         .lean(),
       BlogPost.countDocuments(filter),
     ]);
@@ -207,6 +209,8 @@ export const listBlogPosts = async (req, res) => {
         coverAttachment: post.coverAttachment || null,
         youtubeUrl: post.youtubeUrl || null,
         authorRole: post.authorRole,
+        authorName: (post.author && post.author.name) || null,
+        authorImage: (post.author && post.author.image) || null,
         likesCount: post.likesCount,
         dislikesCount: post.dislikesCount,
         commentCount: post.commentCount,
@@ -224,6 +228,78 @@ export const listBlogPosts = async (req, res) => {
   } catch (error) {
     console.error('Failed to list blog posts:', error);
     return res.status(500).json({ error: error.message || 'Failed to list blog posts' });
+  }
+};
+
+// internal R2 client helper
+let _r2Client;
+const getR2 = () => {
+  if (_r2Client) return _r2Client;
+  const { CLOUDFLARE_R2_ACCOUNT_ID, CLOUDFLARE_R2_ACCESS_KEY_ID, CLOUDFLARE_R2_SECRET_ACCESS_KEY } = process.env;
+  if (!CLOUDFLARE_R2_ACCOUNT_ID || !CLOUDFLARE_R2_ACCESS_KEY_ID || !CLOUDFLARE_R2_SECRET_ACCESS_KEY) {
+    return null; // allow running without deletion if not configured
+  }
+  _r2Client = new S3Client({
+    region: 'auto',
+    endpoint: 'https://' + CLOUDFLARE_R2_ACCOUNT_ID + '.r2.cloudflarestorage.com',
+    credentials: {
+      accessKeyId: CLOUDFLARE_R2_ACCESS_KEY_ID,
+      secretAccessKey: CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    },
+  });
+  return _r2Client;
+};
+
+export const deleteBlogPost = async (req, res) => {
+  try {
+    await connectDB();
+    const { postId } = req.params || {};
+    const { userId } = req.body || {};
+
+    if (!postId || !Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'Invalid post id' });
+    }
+
+    const post = await BlogPost.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Blog post not found' });
+    }
+
+    // authorization: author or admin (basic: same user or schoolAdmin/ngoAdmin)
+    const actorId = req.user?.id || req.user?._id || userId;
+    if (!actorId) return res.status(403).json({ error: 'Not allowed' });
+
+    if (String(post.author) !== String(actorId)) {
+      const actor = await User.findById(actorId).lean();
+      if (!actor || !['schoolAdmin', 'ngoAdmin'].includes(actor.role)) {
+        return res.status(403).json({ error: 'Not allowed' });
+      }
+    }
+
+    // delete reactions and comments
+    await Promise.all([
+      BlogReaction.deleteMany({ post: post._id }),
+      BlogComment.deleteMany({ post: post._id }),
+    ]);
+
+    // delete R2 assets (cover & attachments) if keys present
+    const keys = [];
+    if (post.coverAttachment?.key) keys.push(post.coverAttachment.key);
+    for (const a of post.attachments || []) if (a?.key) keys.push(a.key);
+    const client = getR2();
+    if (client && keys.length) {
+      for (const k of keys) {
+        try {
+          await client.send(new DeleteObjectCommand({ Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME, Key: k }));
+        } catch {}
+      }
+    }
+
+    await BlogPost.deleteOne({ _id: post._id });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete blog post:', error);
+    return res.status(500).json({ error: error.message || 'Failed to delete blog post' });
   }
 };
 
@@ -511,4 +587,5 @@ export default {
   removeReaction,
   createComment,
   listComments,
+  deleteBlogPost,
 };

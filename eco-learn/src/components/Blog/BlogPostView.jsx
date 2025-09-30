@@ -24,7 +24,7 @@ export default function BlogPostView({ slugOrId }) {
       setMyReaction(data?.post?.myReaction || null);
       const cr = await fetch(apiUrl + "/blogs/" + (data?.post?.id || slugOrId) + "/comments");
       const cd = await cr.json();
-      setComments(Array.isArray(cd?.items) ? cd.items : []);
+      setComments(Array.isArray(cd?.comments) ? cd.comments : []);
     } catch (e) {
       setError(e.message || "Failed to load");
     } finally {
@@ -42,12 +42,12 @@ export default function BlogPostView({ slugOrId }) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({ value: type, userId: session?.user?.id }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Failed to react");
       setMyReaction(type);
-      setPost((p) => ({ ...p, likeCount: data?.counts?.likes ?? p?.likeCount, dislikeCount: data?.counts?.dislikes ?? p?.dislikeCount }));
+      setPost((p) => ({ ...p, likeCount: data?.likesCount ?? p?.likeCount, dislikeCount: data?.dislikesCount ?? p?.dislikeCount }));
     } catch (e) {
       toast.error(e.message || "Failed");
     }
@@ -58,6 +58,8 @@ export default function BlogPostView({ slugOrId }) {
       const res = await fetch(apiUrl + "/blogs/" + (post?.id || slugOrId) + "/reactions", {
         method: "DELETE",
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: session?.user?.id }),
       });
       if (!res.ok) throw new Error("Failed to remove reaction");
       setMyReaction(null);
@@ -74,12 +76,31 @@ export default function BlogPostView({ slugOrId }) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: commentText }),
+        body: JSON.stringify({ content: commentText, userId: session?.user?.id }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Failed to comment");
       setCommentText("");
       setComments((prev) => [data?.comment, ...prev]);
+    } catch (e) {
+      toast.error(e.message || "Failed");
+    }
+  }
+
+  async function deletePost() {
+    if (!post) return;
+    if (!confirm("Delete this post? This cannot be undone.")) return;
+    try {
+      const res = await fetch(apiUrl + "/blogs/" + post.id, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: session?.user?.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to delete");
+      toast.success("Post deleted");
+      window.location.href = "/dashboard/blog";
     } catch (e) {
       toast.error(e.message || "Failed");
     }
@@ -91,31 +112,38 @@ export default function BlogPostView({ slugOrId }) {
 
   const reactedLike = myReaction === 'like';
   const reactedDislike = myReaction === 'dislike';
+  const isAuthor = session?.user?.id && String(session.user.id) === String(post.author);
 
   return (
     <article className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold text-slate-900">{post.title}</h1>
-        <p className="text-xs text-slate-500">By {post.authorName} • {new Date(post.createdAt).toLocaleString()}</p>
+        <p className="text-xs text-slate-500">{new Date(post.createdAt).toLocaleString()}</p>
       </header>
+      {post.coverAttachment?.url && (
+        <img src={post.coverAttachment.url} alt={post.title} className="mt-4 h-64 w-full rounded-2xl object-cover" />
+      )}
       <div className="prose prose-slate mt-4 max-w-none">
         <p className="whitespace-pre-wrap text-slate-800">{post.content}</p>
+        {post.youtubeUrl && (
+          <div className="mt-4 aspect-video w-full overflow-hidden rounded-xl">
+            <iframe className="h-full w-full" src={post.youtubeUrl.replace("watch?v=", "embed/")} title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex items-center gap-2">
-        <button onClick={() => (reactedLike ? removeReaction() : react('like'))} className={["rounded-full border px-3 py-1 text-sm font-semibold", reactedLike ? "border-emerald-500 text-emerald-600 bg-emerald-50" : "border-slate-200 text-slate-600 hover:border-emerald-200 hover:text-emerald-600"].join(" ")}>👍 {post.likeCount ?? 0}</button>
-        <button onClick={() => (reactedDislike ? removeReaction() : react('dislike'))} className={["rounded-full border px-3 py-1 text-sm font-semibold", reactedDislike ? "border-red-500 text-red-600 bg-red-50" : "border-slate-200 text-slate-600 hover:border-red-200 hover:text-red-600"].join(" ")}>👎 {post.dislikeCount ?? 0}</button>
+        <button onClick={() => (reactedLike ? removeReaction() : react('like'))} className={["rounded-full border px-3 py-1 text-sm font-semibold", reactedLike ? "border-emerald-500 text-emerald-600 bg-emerald-50" : "border-slate-200 text-slate-600 hover:border-emerald-200 hover:text-emerald-600"].join(" ")}>👍 {post.likesCount ?? 0}</button>
+        <button onClick={() => (reactedDislike ? removeReaction() : react('dislike'))} className={["rounded-full border px-3 py-1 text-sm font-semibold", reactedDislike ? "border-red-500 text-red-600 bg-red-50" : "border-slate-200 text-slate-600 hover:border-red-200 hover:text-red-600"].join(" ")}>👎 {post.dislikesCount ?? 0}</button>
+        {isAuthor && (
+          <button onClick={deletePost} className="ml-auto rounded-full border border-red-200 px-3 py-1 text-sm font-semibold text-red-600 hover:bg-red-50">Delete</button>
+        )}
       </div>
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold text-slate-900">Comments</h2>
         <div className="mt-2 flex gap-2">
-          <input
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Write a comment…"
-            className="flex-1 rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-          />
+          <input value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Write a comment…" className="flex-1 rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100" />
           <button onClick={submitComment} className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600">Post</button>
         </div>
 

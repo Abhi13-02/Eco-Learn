@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import StudentSidebar from "@/components/StudentSidebar";
 import StudentAssignedTasks from "@/components/StudentAssignedTasks";
-import { PieCard, BarCard } from "@/components/Charts";
+import { PieCard, BarCard, LineCard } from "@/components/Charts";
 import authOptions from "@/lib/auth/options";
 import UserMenu from "@/components/UserMenu";
 
@@ -40,21 +40,32 @@ export default async function StudentDashboardPage() {
               <h1 className="mt-1 text-2xl font-bold text-slate-900">Student hub</h1>
               <p className="text-sm text-slate-500">Complete missions, earn points, and rise on the leaderboard.</p>
             </div>
-            <UserMenu name={welcomeName} roleLabel={gradeLabel} points={120} badges={2} />
+            <UserMenu name={welcomeName} roleLabel={gradeLabel} points={overview.totalPoints} badges={overview.badges || 2} />
           </div>
         </header>
 
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-8">
           {/* Overview cards with charts */}
           <section className="grid gap-4 md:grid-cols-3">
-            <PieCard title="Task status" labels={["Accepted","Pending","Rejected"]} data={[overview.counts.accepted, overview.counts.pending, overview.counts.rejected]} />
-            <BarCard title="Points over weeks" labels={overview.week.labels} seriesLabel="Points" data={overview.week.points} />
+            <PieCard 
+              title="Task status" 
+              labels={["Accepted","Pending","Rejected"]} 
+              data={[overview.counts.accepted, overview.counts.pending, overview.counts.rejected]} 
+            />
+            <BarCard 
+              title="Points over weeks" 
+              labels={overview.week.labels} 
+              seriesLabel="Points" 
+              data={overview.week.points} 
+            />
             <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
               <p className="text-sm font-semibold text-slate-900">Quick stats</p>
               <ul className="mt-3 space-y-1 text-sm text-slate-700">
                 <li>Total points: {overview.totalPoints}</li>
                 <li>Completed tasks: {overview.counts.accepted}</li>
                 <li>Pending tasks: {overview.counts.pending}</li>
+                <li>Tasks waiting review: {overview.counts.pending}</li>
+                <li>Rejected submissions: {overview.counts.rejected}</li>
               </ul>
             </div>
           </section>
@@ -72,24 +83,43 @@ export default async function StudentDashboardPage() {
               <div className="grid gap-3 text-slate-900 md:grid-cols-3">
                 <div className="rounded-2xl bg-white/90 p-4 text-center shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Current streak</p>
-                  <p className="mt-1 text-2xl font-bold">3 days</p>
+                  <p className="mt-1 text-2xl font-bold">{overview.streak || 3} days</p>
                   <p className="text-[11px] text-slate-500">Keep the momentum</p>
                 </div>
                 <div className="rounded-2xl bg-white/90 p-4 text-center shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Points</p>
-                  <p className="mt-1 text-2xl font-bold">120</p>
+                  <p className="mt-1 text-2xl font-bold">{overview.totalPoints || 0}</p>
                   <p className="text-[11px] text-slate-500">Closer to next badge</p>
                 </div>
                 <div className="rounded-2xl bg-white/90 p-4 text-center shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Badges</p>
-                  <p className="mt-1 text-2xl font-bold">2</p>
+                  <p className="mt-1 text-2xl font-bold">{overview.badges || 2}</p>
                   <p className="text-[11px] text-slate-500">Collect them all</p>
                 </div>
               </div>
             </div>
           </section>
 
-          <StudentAssignedTasks />
+          <StudentAssignedTasks studentId={user.id} />
+
+          {/* Placeholder sections */}
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <section className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Leaderboard</h2>
+              <p className="mt-1 text-sm text-slate-500">Coming soon - see how you rank among your peers!</p>
+              <div className="mt-4 h-48 flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+                <p className="text-slate-400">Leaderboard feature will be available soon</p>
+              </div>
+            </section>
+            
+            <section className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Environmental Challenges</h2>
+              <p className="mt-1 text-sm text-slate-500">Coming soon - take on special challenges to earn bonus points!</p>
+              <div className="mt-4 h-48 flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+                <p className="text-slate-400">Challenges feature will be available soon</p>
+              </div>
+            </section>
+          </div>
         </div>
       </main>
     </div>

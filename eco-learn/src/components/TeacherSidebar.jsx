@@ -1,15 +1,24 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  AcademicCapIcon,
+  Cog6ToothIcon,
+  FolderIcon,
+  HomeIcon,
+  SparklesIcon,
+  ClipboardDocumentListIcon,
+  Squares2X2Icon,
+} from "@heroicons/react/24/outline";
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard/teacher", icon: "🏠" },
-  { name: "Verify Submissions", href: "/dashboard/teacher/submissions", icon: "✅" },
-  { name: "Blog Posts", href: "/dashboard/blog", icon: "📝" },
-  { name: "Manage Class", href: "/dashboard/teacher/class", icon: "📚" },
-  { name: "Leaderboard", href: "/dashboard/teacher/leaderboard", icon: "🏆" },
-  { name: "Resources", href: "/dashboard/teacher/resources", icon: "📂" },
-  { name: "Settings", href: "/dashboard/teacher/settings", icon: "⚙️" },
+  { name: "Dashboard", href: "/dashboard/teacher", icon: HomeIcon },
+  { name: "Verify Submissions", href: "/dashboard/teacher/submissions", icon: ClipboardDocumentListIcon },
+  { name: "Blog Posts", href: "/dashboard/blog", icon: Squares2X2Icon },
+  { name: "Manage Class", href: "/dashboard/teacher/class", icon: AcademicCapIcon },
+  { name: "Leaderboard", href: "/dashboard/teacher/leaderboard", icon: SparklesIcon },
+  { name: "Resources", href: "/dashboard/teacher/resources", icon: FolderIcon },
+  { name: "Settings", href: "/dashboard/teacher/settings", icon: Cog6ToothIcon },
 ];
 
 export default function TeacherSidebar() {
@@ -18,8 +27,8 @@ export default function TeacherSidebar() {
   return (
     <aside className="hidden min-h-screen w-64 flex-shrink-0 border-r border-emerald-100 bg-white/95 px-4 py-6 shadow-sm lg:flex lg:flex-col">
       <div className="flex items-center gap-2 px-2 pb-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-xl">
-          🌿
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <SparklesIcon className="h-6 w-6" />
         </div>
         <div>
           <p className="text-sm font-semibold text-emerald-600">EcoLearn</p>
@@ -29,6 +38,7 @@ export default function TeacherSidebar() {
 
       <nav className="flex-1 space-y-1">
         {navItems.map((item) => {
+          const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
             <Link
@@ -41,7 +51,7 @@ export default function TeacherSidebar() {
                   : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700",
               ].join(" ")}
             >
-              <span className="text-lg">{item.icon}</span>
+              <Icon className="h-5 w-5" />
               <span>{item.name}</span>
             </Link>
           );

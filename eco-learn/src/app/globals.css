@@ -24,3 +24,45 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure strong, accessible text color inside form fields across the app */
+/* Light mode defaults */
+input, textarea, select {
+  color: #0f172a !important; /* slate-900 */
+  caret-color: #0f172a !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important; /* slate-300 */
+  color-scheme: light; /* keep controls light even in dark mode */
+}
+input::placeholder, textarea::placeholder {
+  color: #475569 !important; /* slate-600 for better contrast */
+  opacity: 1; /* keep placeholder readable */
+}
+
+/* Autofill overrides (Chrome/WebKit) to preserve readable text */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Dark mode: keep inputs legible on white backgrounds */
+@media (prefers-color-scheme: dark) {
+  input, textarea, select {
+    color: #0f172a !important; /* still dark text */
+    caret-color: #0f172a !important;
+    background-color: #ffffff !important; /* prevent dimming */
+    border-color: #cbd5e1 !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: #475569 !important;
+  }
+  input:-webkit-autofill,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: #0f172a !important;
+    caret-color: #0f172a !important;
+  }
+}

@@ -1,14 +1,21 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  BookOpenIcon,
+  ChatBubbleLeftRightIcon,
+  ChartBarIcon,
+  HomeIcon,
+  SparklesIcon,
+  TrophyIcon,
+} from "@heroicons/react/24/outline";
 
 const navItems = [
-  { name: "My Tasks", href: "/dashboard/student", icon: "📝" },
-  { name: "Leaderboard", href: "/dashboard/student/leaderboard", icon: "🏅" },
-  { name: "Badges", href: "/dashboard/student/badges", icon: "🎖️" },
-  { name: "Notifications", href: "/dashboard/student/notifications", icon: "🔔" },
-  { name: "Blog Posts", href: "/dashboard/blog", icon: "📝" },
-  { name: "Profile", href: "/dashboard/student/profile", icon: "👤" },
+  { name: "My Tasks", href: "/dashboard/student", icon: HomeIcon },
+  { name: "Blog Posts", href: "/dashboard/blog", icon: ChatBubbleLeftRightIcon },
+  { name: "Leaderboard", href: "/dashboard/student/leaderboard", icon: TrophyIcon },
+  { name: "Progress", href: "/dashboard/student/progress", icon: ChartBarIcon },
+  { name: "Resources", href: "/dashboard/student/resources", icon: BookOpenIcon },
 ];
 
 export default function StudentSidebar() {
@@ -17,8 +24,8 @@ export default function StudentSidebar() {
   return (
     <aside className="hidden min-h-screen w-60 flex-shrink-0 border-r border-emerald-100 bg-white/95 px-4 py-6 shadow-sm lg:flex lg:flex-col">
       <div className="flex items-center gap-2 px-2 pb-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-xl">
-          🌱
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <SparklesIcon className="h-6 w-6" />
         </div>
         <div>
           <p className="text-sm font-semibold text-emerald-600">EcoLearn</p>
@@ -28,6 +35,7 @@ export default function StudentSidebar() {
 
       <nav className="flex-1 space-y-1">
         {navItems.map((item) => {
+          const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
             <Link
@@ -40,7 +48,7 @@ export default function StudentSidebar() {
                   : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700",
               ].join(" ")}
             >
-              <span className="text-lg">{item.icon}</span>
+              <Icon className="h-5 w-5" />
               <span>{item.name}</span>
             </Link>
           );

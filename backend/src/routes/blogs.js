@@ -8,6 +8,7 @@ import {
   removeReaction,
   createComment,
   listComments,
+  deleteBlogPost,
 } from '../controllers/blogController.js';
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.post('/:postId/reactions', upsertReaction);
 router.delete('/:postId/reactions', removeReaction);
 router.post('/:postId/comments', createComment);
 router.get('/:postId/comments', listComments);
+router.delete('/:postId', deleteBlogPost);
 
 export default router;

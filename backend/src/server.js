@@ -1,4 +1,4 @@
-// src/server.js
+﻿// src/server.js
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -9,6 +9,8 @@ import uploadRoutes from './routes/uploads.js';
 import teacherRoutes from './routes/teacher.js';
 import studentRoutes from './routes/students.js';
 import blogRoutes from './routes/blogs.js';
+import ngoRoutes from './routes/ngo.js';
+import notificationRoutes from './routes/notifications.js';
 
 const app = express();
 
@@ -36,15 +38,21 @@ app.use('/teacher', teacherRoutes);
 app.use('/students', studentRoutes);
 app.use('/blogs', blogRoutes);
 
+app.use('/ngo', ngoRoutes);
+app.use('/notifications', notificationRoutes);
+
 // Boot
 const port = process.env.PORT || 4000;
 connectDB()
   .then(() => {
     app.listen(port, () => {
-      console.log(`🚀 API listening on http://localhost:${port}`);
+      console.log(`ðŸš€ API listening on http://localhost:${port}`);
     });
   })
   .catch((err) => {
     console.error('Failed to start server:', err.message);
     process.exit(1);
   });
+
+
+
