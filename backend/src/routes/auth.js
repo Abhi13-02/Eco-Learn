@@ -5,6 +5,8 @@ import {
   createNgo,
   joinSchool,
   joinSchoolSocial,
+  joinNgoSocial,
+  googleLogin,
   login,
   getSchoolDetails,
   getSchoolByAdminEmail,
@@ -30,8 +32,17 @@ router.post('/join-school', joinSchool);
  */
 router.post('/join-school-social', joinSchoolSocial);
 
+/**
+ * Social/onboarding variant for NGOs (e.g., Google sign-in) – no password required.
+ * Call this right after Google returns, with the NGO name the user entered.
+ */
+router.post('/join-ngo-social', joinNgoSocial);
+
 // Simple email/password login (usable by your own client or NextAuth Credentials authorize)
 router.post('/login', login);
+
+// Google OAuth login for existing users
+router.post('/google-login', googleLogin);
 
 // Fetch school metadata (code, name) by id
 router.get('/school/:id', getSchoolDetails);

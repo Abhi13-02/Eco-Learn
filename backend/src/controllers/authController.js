@@ -364,11 +364,122 @@ export const getSchoolByAdminEmail = async (req, res) => {
   }
 };
 
+export const joinNgoSocial = async (req, res) => {
+  try {
+    await connectDB();
+    let { ngoName, adminName, adminEmail } = req.body;
+
+    ngoName = normalizeString(ngoName);
+    adminName = normalizeString(adminName);
+    adminEmail = normalizeEmail(adminEmail || req.body.email);
+
+    if (!ngoName || !adminEmail) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ email: adminEmail });
+
+    if (!user) {
+      // Create new NGO and user
+      const ngo = await Ngo.create({ name: ngoName });
+
+      user = new User({
+        name: adminName || adminEmail,
+        email: adminEmail,
+        role: 'ngoAdmin',
+        ngo: ngo._id,
+      });
+      await user.save();
+
+      ngo.createdBy = user._id;
+      await ngo.save();
+
+      return res.status(201).json({
+        ngo: { id: String(ngo._id), name: ngo.name, code: ngo.code },
+        admin: { id: String(user._id), email: user.email, name: user.name },
+      });
+    } else {
+      // User exists, check if they can be updated to NGO admin
+      if (user.school) {
+        return res.status(400).json({ error: 'User already belongs to a School' });
+      }
+      
+      // If user has no NGO, create one and link it
+      if (!user.ngo) {
+        const ngo = await Ngo.create({ name: ngoName });
+        user.role = 'ngoAdmin';
+        user.ngo = ngo._id;
+        await user.save();
+        
+        ngo.createdBy = user._id;
+        await ngo.save();
+        
+        return res.status(201).json({
+          ngo: { id: String(ngo._id), name: ngo.name, code: ngo.code },
+          admin: { id: String(user._id), email: user.email, name: user.name },
+        });
+      } else {
+        // User already has an NGO
+        const ngo = await Ngo.findById(user.ngo);
+        return res.status(200).json({
+          ngo: { id: String(ngo._id), name: ngo.name, code: ngo.code },
+          admin: { id: String(user._id), email: user.email, name: user.name },
+        });
+      }
+    }
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+export const googleLogin = async (req, res) => {
+  try {
+    await connectDB();
+    const { email, name } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: normalizeEmail(email) }).populate('school ngo');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found. Please sign up first.' });
+    }
+
+    // Update user name if it changed
+    if (name && name !== user.name) {
+      user.name = normalizeString(name);
+      await user.save();
+    }
+
+    // Prepare user data for NextAuth
+    const userData = {
+      id: String(user._id),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      orgType: user.school ? 'SCHOOL' : user.ngo ? 'NGO' : null,
+      orgId: user.school ? String(user.school._id) : user.ngo ? String(user.ngo._id) : null,
+      grade: user.grade || null,
+      teacherBio: user.teacherBio || null,
+    };
+
+    return res.status(200).json(userData);
+  } catch (error) {
+    console.error('Google login error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export default {
   createSchool,
   createNgo,
   joinSchool,
   joinSchoolSocial,
+  joinNgoSocial,
+  googleLogin,
   login,
   getSchoolDetails,
   getSchoolByAdminEmail,

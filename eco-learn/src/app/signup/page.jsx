@@ -425,10 +425,24 @@ export default function SignupPage() {
 
     const payload = config.buildGooglePayload(activeForm);
     try {
+      // Store in both localStorage and sessionStorage for better reliability
       window.localStorage.setItem("onboard", JSON.stringify(payload));
+      window.sessionStorage.setItem("onboard", JSON.stringify(payload));
+      
+      // Also store role separately for easier access
+      window.localStorage.setItem("onboard_role", payload.role);
+      window.sessionStorage.setItem("onboard_role", payload.role);
+      
+      console.log("Stored onboarding data:", payload);
       showInfoToast("Redirecting to Google sign-up...");
-      signIn("google", { callbackUrl: "/onboard" });
+      
+      // Use redirect: false to avoid Next.js routing issues
+      signIn("google", { 
+        callbackUrl: "/onboard",
+        redirect: true
+      });
     } catch (err) {
+      console.error("Error during Google signup:", err);
       showErrorToast("Unable to open Google sign-up. Please try again.");
     }
   }

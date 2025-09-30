@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import TeacherSidebar from "@/components/TeacherSidebar";
 import authOptions from "@/lib/auth/options";
 import TeacherOverview from "@/components/Teacher/TeacherOverview";
+import EcoLeaderboard from "@/components/Leaderboard/EcoLeaderboard";
 import TeacherTaskManager from "@/components/Teacher/TeacherTaskManager";
 import StudentManager from "@/components/Teacher/StudentManager";
 import UserMenu from "@/components/UserMenu";
@@ -53,7 +54,7 @@ export default async function TeacherDashboardPage({ searchParams }) {
               { id: "tasks", label: "Task Manager" },
               { id: "students", label: "Student Manager" },
               { id: "blog", label: "Blog Posts", href: "/dashboard/blog" },
-              { id: "leaderboard", label: "Leaderboard", disabled: true },
+              { id: "leaderboard", label: "Leaderboard" },
             ].map((tab) => (
               <a
                 key={tab.id}
@@ -183,12 +184,15 @@ export default async function TeacherDashboardPage({ searchParams }) {
           {activeTab === "students" && <StudentManager />}
           
           {activeTab === "leaderboard" && (
-            <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900">Leaderboard</h2>
-              <p className="mt-1 text-sm text-slate-500">Coming soon - track student and class rankings!</p>
-              <div className="mt-8 flex h-64 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
-                <p className="text-slate-400">Leaderboard feature will be available soon</p>
-              </div>
+            <div className="mt-4">
+              <EcoLeaderboard
+                userId={user.id}
+                schoolId={user.orgType === "SCHOOL" ? user.orgId : null}
+                defaultGrade={searchParams?.grade || null}
+                limit={30}
+                title="School leaderboard"
+                description="Monitor class performance, celebrate badge milestones, and spotlight eco leaders across grades."
+              />
             </div>
           )}
         </div>

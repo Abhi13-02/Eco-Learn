@@ -53,8 +53,12 @@ export default function TeacherOverview() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <PieCard title="Submissions status" labels={["Accepted","Pending","Rejected"]} data={[totals.accepted, totals.pending, totals.rejected]} />
-        <BarCard title="Accepted by task (Top 5)" labels={barLabels} seriesLabel="Accepted" data={barData} />
+        <div className="h-80">
+          <PieCard title="Submissions status" labels={["Accepted","Pending","Rejected"]} data={[totals.accepted, totals.pending, totals.rejected]} />
+        </div>
+        <div className="h-80">
+          <BarCard title="Accepted by task (Top 5)" labels={barLabels} seriesLabel="Accepted" data={barData} />
+        </div>
         <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-900">Quick stats</p>
           <ul className="mt-3 space-y-1 text-sm text-slate-700">

@@ -2,6 +2,7 @@
 import mongoose from 'mongoose';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { connectDB } from '../lib/db.js';
+import { awardBadgesForScore } from '../lib/badges.js';
 import { Task, TaskSubmission, ALLOWED_GRADES } from '../models/tasks.js';
 import { PointTransaction, UserScore } from '../models/gamification.js';
 import { User } from '../models/users.js';
@@ -646,15 +647,28 @@ export const reviewSubmission = async (req, res) => {
 
       // Upsert UserScore total
       const student = await User.findById(submission.student).lean();
-      await UserScore.findOneAndUpdate(
+      const setPayload = {
+        school: submission.school,
+        lastUpdatedAt: new Date(),
+      };
+      const gradeSnapshot = student?.student?.grade;
+      if (typeof gradeSnapshot === 'string' && gradeSnapshot.trim()) {
+        setPayload.grade = gradeSnapshot.trim();
+      }
+
+      const updatedScore = await UserScore.findOneAndUpdate(
         { user: submission.student },
         {
-          $setOnInsert: { school: submission.school, grade: student?.student?.grade || null },
+          $set: setPayload,
           $inc: { totalPoints: delta },
-          lastUpdatedAt: new Date(),
         },
-        { upsert: true, new: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true }
       );
+
+      if (updatedScore) {
+        await awardBadgesForScore(updatedScore.user, updatedScore.totalPoints);
+      }
+
     }
 
     return res.json({

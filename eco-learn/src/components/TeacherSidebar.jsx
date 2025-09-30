@@ -15,10 +15,7 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard/teacher", icon: HomeIcon },
   { name: "Verify Submissions", href: "/dashboard/teacher/submissions", icon: ClipboardDocumentListIcon },
   { name: "Blog Posts", href: "/dashboard/blog", icon: Squares2X2Icon },
-  { name: "Manage Class", href: "/dashboard/teacher/class", icon: AcademicCapIcon },
-  { name: "Leaderboard", href: "/dashboard/teacher/leaderboard", icon: SparklesIcon },
-  { name: "Resources", href: "/dashboard/teacher/resources", icon: FolderIcon },
-  { name: "Settings", href: "/dashboard/teacher/settings", icon: Cog6ToothIcon },
+  { name: "Leaderboard", href: "/dashboard/teacher?tab=leaderboard", icon: SparklesIcon },
 ];
 
 export default function TeacherSidebar() {

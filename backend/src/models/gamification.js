@@ -45,14 +45,16 @@ const BadgeSchema = new Schema(
   {
     code: {
       type: String,
-      enum: ['GREEN_SPROUT', 'ECO_WARRIOR', 'PLANET_GUARDIAN'],
       required: true,
       unique: true,
+      uppercase: true,
+      trim: true,
     },
     name: { type: String, required: true },
     description: { type: String },
     threshold: { type: Number, required: true }, // points required
     icon: { type: String }, // optional icon URL or name
+    theme: { type: String, default: 'emerald' },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

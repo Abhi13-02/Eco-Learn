@@ -206,7 +206,7 @@ export default function SchoolAdminOverview() {
               </div>
             </div>
             
-            <div className="h-64">
+            <div className="h-80">
               <LineCard
                 title=""
                 labels={timeData.labels}
@@ -221,7 +221,7 @@ export default function SchoolAdminOverview() {
             {/* Grade Performance */}
             <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-lg font-semibold text-slate-900">Grade Performance</h3>
-              <div className="h-64">
+              <div className="h-80">
                 <BarCard
                   title=""
                   labels={analyticsData.gradePerformance.labels}
@@ -235,7 +235,7 @@ export default function SchoolAdminOverview() {
             {/* Task Status Distribution */}
             <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-lg font-semibold text-slate-900">Task Status Distribution</h3>
-              <div className="h-64">
+              <div className="h-80">
                 <PieCard
                   title=""
                   labels={["Completed", "Pending", "Rejected"]}

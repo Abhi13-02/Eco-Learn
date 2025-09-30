@@ -4,6 +4,7 @@ import authOptions from "@/lib/auth/options";
 import UserMenu from "@/components/UserMenu";
 import NgoSidebar from "@/components/NgoSidebar";
 import NGOImpactDashboard from "@/components/NGO/NGOImpactDashboard";
+import EcoLeaderboard from "@/components/Leaderboard/EcoLeaderboard";
 import Link from "next/link";
 
 export const metadata = { title: "NGO Admin Dashboard | Eco-Learn" };
@@ -46,6 +47,7 @@ export default async function NgoAdminDashboardPage({ searchParams }) {
               { id: "overview", label: "Impact Dashboard" },
               { id: "schools", label: "Browse Schools", href: "/dashboard/ngo-admin/schools" },
               { id: "collaborations", label: "Collaborations", href: "/dashboard/ngo-admin/collaborations" },
+              { id: "leaderboard", label: "Leaderboard" },
               { id: "blog", label: "Blog Posts", href: "/dashboard/blog" },
             ].map((tab) => (
               <a
@@ -95,6 +97,19 @@ export default async function NgoAdminDashboardPage({ searchParams }) {
 
               <NGOImpactDashboard />
             </>
+          )}
+
+          {activeTab === "leaderboard" && (
+            <div className="mt-4">
+              <EcoLeaderboard
+                userId={null}
+                schoolId={null}
+                defaultGrade={searchParams?.grade || "all"}
+                limit={50}
+                title="Global eco leaderboard"
+                description="Track environmental impact across all schools and see the top eco-warriors making a difference worldwide."
+              />
+            </div>
           )}
           
           {/* Other tabs are handled by their respective pages */}

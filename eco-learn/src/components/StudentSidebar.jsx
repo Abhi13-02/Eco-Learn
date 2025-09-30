@@ -11,11 +11,11 @@ import {
 } from "@heroicons/react/24/outline";
 
 const navItems = [
+  { name: "Overview", href: "/dashboard/student/overview", icon: ChartBarIcon },
   { name: "My Tasks", href: "/dashboard/student", icon: HomeIcon },
-  { name: "Blog Posts", href: "/dashboard/blog", icon: ChatBubbleLeftRightIcon },
   { name: "Leaderboard", href: "/dashboard/student/leaderboard", icon: TrophyIcon },
-  { name: "Progress", href: "/dashboard/student/progress", icon: ChartBarIcon },
-  { name: "Resources", href: "/dashboard/student/resources", icon: BookOpenIcon },
+  { name: "Blog Posts", href: "/dashboard/blog", icon: ChatBubbleLeftRightIcon },
+  { name: "NGO Partners", href: "/dashboard/student/ngo", icon: SparklesIcon },
 ];
 
 export default function StudentSidebar() {

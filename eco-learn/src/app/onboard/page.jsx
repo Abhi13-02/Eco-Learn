@@ -20,8 +20,56 @@ export default function OnboardPage() {
         return;
       }
 
-      const raw = typeof window !== "undefined" ? localStorage.getItem("onboard") : null;
+      // Safely access storage (try both localStorage and sessionStorage)
+      let raw;
+      let storageType = "";
+      
+      try {
+        // Try localStorage first
+        if (typeof window !== "undefined" && window.localStorage) {
+          raw = window.localStorage.getItem("onboard");
+          if (raw) {
+            storageType = "localStorage";
+            console.log("Found onboard data in localStorage");
+          }
+        }
+        
+        // If not found, try sessionStorage
+        if (!raw && typeof window !== "undefined" && window.sessionStorage) {
+          raw = window.sessionStorage.getItem("onboard");
+          if (raw) {
+            storageType = "sessionStorage";
+            console.log("Found onboard data in sessionStorage");
+          }
+        }
+        
+        // Check for separate role storage if main data is missing
+        if (!raw && typeof window !== "undefined") {
+          const role = window.localStorage.getItem("onboard_role") || 
+                       window.sessionStorage.getItem("onboard_role");
+          
+          if (role === "ngoAdmin") {
+            // Reconstruct basic payload for NGO
+            console.log("Using fallback from onboard_role:", role);
+            raw = JSON.stringify({
+              role: "ngoAdmin",
+              provider: "google",
+              ngoName: session?.user?.name + "'s Organization",
+              adminName: session?.user?.name
+            });
+            storageType = "fallback";
+          }
+        }
+        
+        console.log("Onboard data source:", storageType);
+        console.log("Raw onboard data:", raw ? raw.substring(0, 100) : "null");
+      } catch (err) {
+        console.error("Error reading from storage:", err);
+        raw = null;
+      }
+
       if (!raw) {
+        console.log("No onboarding data found in any storage. Session:", session);
         const fallbackRole = session?.user?.role;
         router.replace(fallbackRole ? getDashboardPath(fallbackRole) : "/");
         return;
@@ -147,7 +195,7 @@ export default function OnboardPage() {
         }
 
         request = {
-          url: API + "/auth/ngo",
+          url: API + "/auth/join-ngo-social",
           body: {
             ngoName,
             adminName,
@@ -178,14 +226,21 @@ export default function OnboardPage() {
       }
 
       try {
+        console.log("Making API request to:", request.url);
+        console.log("Request body:", JSON.stringify(request.body));
+        
         const response = await fetch(request.url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(request.body),
         });
+        
+        console.log("API response status:", response.status);
         const data = await response.json();
+        console.log("API response data:", data);
+        
         if (!response.ok) {
-          throw new Error(data?.error || "Onboarding failed");
+          throw new Error(data?.error || `Onboarding failed with status ${response.status}`);
         }
 
         let destination = getDashboardPath(role);
@@ -196,11 +251,43 @@ export default function OnboardPage() {
           destination = getDashboardPath(nextUser.role ?? role);
         }
 
-        localStorage.removeItem("onboard");
+        // Clean up all storage items
+        try {
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("onboard");
+            window.localStorage.removeItem("onboard_role");
+            window.sessionStorage.removeItem("onboard");
+            window.sessionStorage.removeItem("onboard_role");
+          }
+        } catch (e) {
+          console.error("Error cleaning up storage:", e);
+        }
+        
         router.replace(destination);
         showSuccessToast("You're all set! Redirecting to your dashboard...");
       } catch (err) {
-        showErrorToast(err instanceof Error ? err.message : "Onboarding failed");
+        console.error("Onboarding error:", err);
+        
+        // Handle fetch errors differently from API errors
+        if (err.name === 'TypeError' && err.message.includes('fetch')) {
+          showErrorToast("Network error: Please check your connection and try again");
+        } else {
+          showErrorToast(err instanceof Error ? err.message : "Onboarding failed");
+        }
+        
+        // For network errors, keep data for retry
+        if (err.name !== 'TypeError') {
+          try {
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem("onboard");
+              window.localStorage.removeItem("onboard_role");
+              window.sessionStorage.removeItem("onboard");
+              window.sessionStorage.removeItem("onboard_role");
+            }
+          } catch (e) {
+            console.error("Error cleaning up storage after error:", e);
+          }
+        }
       }
     }
 

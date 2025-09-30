@@ -6,6 +6,7 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard/ngo-admin", icon: "🏠" },
   { name: "Schools", href: "/dashboard/ngo-admin/schools", icon: "🏫" },
   { name: "Collaborations", href: "/dashboard/ngo-admin/collaborations", icon: "🤝" },
+  { name: "Leaderboard", href: "/dashboard/ngo-admin?tab=leaderboard", icon: "🏆" },
   { name: "Blog Posts", href: "/dashboard/blog", icon: "📝" },
 ];
 

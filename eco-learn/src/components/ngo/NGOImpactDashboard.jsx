@@ -131,7 +131,7 @@ export default function NGOImpactDashboard() {
       ) : impactData ? (
         <>
           {/* Summary Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-wider text-emerald-500">School Collaborations</p>
               <p className="mt-2 text-4xl font-bold text-slate-900">{impactData.collaborations.total}</p>
@@ -180,7 +180,7 @@ export default function NGOImpactDashboard() {
 
           {/* Engagement Chart */}
           <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-lg font-semibold text-slate-900">Engagement Over Time</h3>
               
               <div className="flex gap-2">
@@ -188,7 +188,7 @@ export default function NGOImpactDashboard() {
                   <button
                     key={range}
                     onClick={() => setTimeRange(range)}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                       timeRange === range 
                         ? "bg-emerald-500 text-white" 
                         : "bg-slate-100 text-slate-600 hover:bg-emerald-100"
@@ -200,7 +200,7 @@ export default function NGOImpactDashboard() {
               </div>
             </div>
             
-            <div className="h-64">
+            <div className="h-96 w-full">
               <LineCard
                 title=""
                 labels={timeData.labels}
@@ -211,11 +211,11 @@ export default function NGOImpactDashboard() {
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {/* Environmental Impact */}
             <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-lg font-semibold text-slate-900">Environmental Impact Areas</h3>
-              <div className="h-64">
+              <div className="h-96 w-full">
                 <BarCard
                   title=""
                   labels={impactData.environmentalImpact.labels}

@@ -5,6 +5,7 @@ import UserMenu from "@/components/UserMenu";
 import CollabInvitesForSchool from "@/components/ngo/CollabInvitesForSchool";
 import SchoolCodeCard from "@/components/dashboard/SchoolCodeCard";
 import SchoolAdminOverview from "@/components/School/SchoolAdminOverview";
+import EcoLeaderboard from "@/components/Leaderboard/EcoLeaderboard";
 import authOptions from "@/lib/auth/options";
 
 export const metadata = { title: "School Admin Dashboard | Eco-Learn" };
@@ -85,7 +86,7 @@ export default async function SchoolAdminDashboardPage({ searchParams }) {
               { id: "users", label: "Manage Users" },
               { id: "analytics", label: "School Analytics" },
               { id: "blog", label: "Blog Posts", href: "/dashboard/blog" },
-              { id: "leaderboard", label: "Leaderboard", disabled: true },
+              { id: "leaderboard", label: "Leaderboard" },
             ].map((tab) => (
               <a
                 key={tab.id}
@@ -169,12 +170,15 @@ export default async function SchoolAdminDashboardPage({ searchParams }) {
           )}
           
           {activeTab === "leaderboard" && (
-            <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900">Leaderboard</h2>
-              <p className="mt-1 text-sm text-slate-500">Track the performance of classes and individual students.</p>
-              <div className="mt-8 flex h-64 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
-                <p className="text-slate-400">Leaderboard feature will be available soon</p>
-              </div>
+            <div className="mt-4">
+              <EcoLeaderboard
+                userId={null}
+                schoolId={user.orgType === "SCHOOL" ? user.orgId : null}
+                defaultGrade={searchParams?.grade || "all"}
+                limit={50}
+                title="School leaderboard"
+                description="Monitor school-wide performance, celebrate achievements, and track environmental impact across all grades."
+              />
             </div>
           )}
         </div>

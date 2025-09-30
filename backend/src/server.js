@@ -11,6 +11,7 @@ import studentRoutes from './routes/students.js';
 import blogRoutes from './routes/blogs.js';
 import ngoRoutes from './routes/ngo.js';
 import notificationRoutes from './routes/notifications.js';
+import leaderboardRoutes from './routes/leaderboard.js';
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/uploads', uploadRoutes);
 app.use('/teacher', teacherRoutes);
 app.use('/students', studentRoutes);
 app.use('/blogs', blogRoutes);
+app.use('/leaderboard', leaderboardRoutes);
 
 app.use('/ngo', ngoRoutes);
 app.use('/notifications', notificationRoutes);
