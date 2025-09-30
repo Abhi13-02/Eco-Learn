@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import authOptions from "@/lib/auth/options";
 import UserMenu from "@/components/UserMenu";
 import NgoSidebar from "@/components/NgoSidebar";
-import NGOImpactDashboard from "@/components/NGO/NGOImpactDashboard";
+import NGOImpactDashboard from "@/components/ngo/NGOImpactDashboard";
 import EcoLeaderboard from "@/components/Leaderboard/EcoLeaderboard";
 import Link from "next/link";
 
