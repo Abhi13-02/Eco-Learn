@@ -7,7 +7,7 @@ const navItems = [
   { name: "Schools", href: "/dashboard/ngo-admin/schools", icon: "🏫" },
   { name: "Collaborations", href: "/dashboard/ngo-admin/collaborations", icon: "🤝" },
   { name: "Leaderboard", href: "/dashboard/ngo-admin?tab=leaderboard", icon: "🏆" },
-  { name: "Blog Posts", href: "/dashboard/blog", icon: "📝" },
+  { name: "Campaigns", href: "/dashboard/blog", icon: "📢" },
 ];
 
 export default function NgoSidebar() {

@@ -48,7 +48,7 @@ export default async function NgoAdminDashboardPage({ searchParams }) {
               { id: "schools", label: "Browse Schools", href: "/dashboard/ngo-admin/schools" },
               { id: "collaborations", label: "Collaborations", href: "/dashboard/ngo-admin/collaborations" },
               { id: "leaderboard", label: "Leaderboard" },
-              { id: "blog", label: "Blog Posts", href: "/dashboard/blog" },
+              { id: "blog", label: "Campaigns", href: "/dashboard/blog" },
             ].map((tab) => (
               <a
                 key={tab.id}
@@ -73,7 +73,7 @@ export default async function NgoAdminDashboardPage({ searchParams }) {
                     <p className="text-sm font-semibold">Welcome back, {welcomeName}! 🌍</p>
                     <h2 className="mt-2 text-3xl font-bold">Empower schools with environmental education</h2>
                     <p className="mt-2 max-w-xl text-sm text-emerald-50">
-                      Connect with schools, launch campaigns, and track your organization's impact on students' environmental awareness.
+                      Connect with schools, launch environmental campaigns, and track your organization's impact on students' environmental awareness.
                     </p>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
@@ -88,8 +88,8 @@ export default async function NgoAdminDashboardPage({ searchParams }) {
                       href="/dashboard/blog" 
                       className="rounded-2xl bg-white/90 p-4 text-center shadow-sm text-slate-900 hover:bg-white"
                     >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Publish Content</p>
-                      <p className="mt-2 text-[11px] text-slate-500">Share campaigns and educational resources</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500">Launch Campaigns</p>
+                      <p className="mt-2 text-[11px] text-slate-500">Create and share environmental campaigns</p>
                     </Link>
                   </div>
                 </div>
