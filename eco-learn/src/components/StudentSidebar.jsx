@@ -8,12 +8,14 @@ import {
   HomeIcon,
   SparklesIcon,
   TrophyIcon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
 
 const navItems = [
   { name: "Overview", href: "/dashboard/student/overview", icon: ChartBarIcon },
   { name: "My Tasks", href: "/dashboard/student", icon: HomeIcon },
   { name: "Leaderboard", href: "/dashboard/student/leaderboard", icon: TrophyIcon },
+  { name: "Games", href: "/dashboard/student/games", icon: PlayIcon },
   { name: "Blog Posts", href: "/dashboard/blog", icon: ChatBubbleLeftRightIcon },
   { name: "NGO Partners", href: "/dashboard/student/ngo", icon: SparklesIcon },
 ];

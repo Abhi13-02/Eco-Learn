@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Target Bin Challenge ♻</title>
+<style>
+body {
+  margin:0; font-family: 'Comic Sans MS', cursive, sans-serif; text-align:center; 
+  background: #e0f7fa;
+}
+
+/* Canvas with gradient and rounded edges */
+canvas { 
+  display:block; 
+  margin:20px auto; 
+  border-radius:15px; 
+  box-shadow:0 5px 20px rgba(0,0,0,0.3); 
+  display:none; 
+  background: linear-gradient(to bottom, #cce7ff, #b3f0ff);
+}
+
+/* Start/Game Over screens */
+#startScreen, #gameOverScreen {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  border-radius:20px; padding:30px 50px; 
+  box-shadow:0 8px 25px rgba(0,0,0,0.5); 
+  background: linear-gradient(to right, #f0fff0, #c0ffc0);
+  z-index: 10;
+}
+
+/* Buttons */
+button {
+  border:none; border-radius:10px; padding:12px 25px; font-size:18px; font-weight:bold;
+  background: linear-gradient(to right, #4caf50, #81c784); color:white; cursor:pointer;
+  transition: all 0.2s;
+}
+button:hover {
+  transform: scale(1.1); box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Score/Level panel */
+.score-panel {
+  display:inline-block; margin:5px; padding:5px 12px; border-radius:10px;
+  background: rgba(255,255,255,0.8); font-weight:bold; font-size:18px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* Waste emoji shadow */
+.waste {
+  text-shadow:1px 1px 2px #000;
+}
+
+/* Basket style */
+.basket {
+  border-radius:15px;
+  background: linear-gradient(to top, #8b4513, #d2691e);
+  box-shadow:0 3px 5px rgba(0,0,0,0.5);
+}
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="startScreen">
+<h1>♻ Target Bin Challenge ♻</h1>
+<p><strong>Rules:</strong></p>
+<ul>
+<li>At each level, a target bin will be randomly selected.</li>
+<li>Only collect waste suitable for the target bin.</li>
+<li>Correct waste: +10 points</li>
+<li>Wrong waste: -5 points</li>
+<li>Missing a correct waste counts as a miss.</li>
+<li>Game ends after 5 missed correct wastes.</li>
+<li>Level increases every 50 points and a new target bin is chosen.</li>
+<li>Use Left/Right arrow keys to move the basket.</li>
+</ul>
+<button id="startBtn">Start Game</button>
+</div>
+
+<!-- Game Over Screen -->
+<div id="gameOverScreen">
+<h1>Game Over!</h1>
+<p id="finalScore"></p>
+<button id="restartBtn">Play Again</button>
+</div>
+
+<!-- Game Canvas -->
+<canvas id="gameCanvas" width="600" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Initial hide Game Over
+document.getElementById("gameOverScreen").style.display = "none";
+document.getElementById("startScreen").style.display = "block";
+
+// Basket
+let basket = { x:250, y:420, width:100, height:30, speed:7 };
+
+// Waste emojis
+const wasteTypes = {
+  Organic: ["🍌","🍎","🥬","🍊"],
+  Plastic: ["🥤","🛍","🧴","🪣"],
+  "E-Waste": ["🔋","💻","📱","🖱"],
+  Hazardous: ["⚗","🧪","🧹","🩹"]
+};
+
+let wasteItems = [];
+let score=0, missed=0, keys={}, gameInterval, spawnInterval, targetBin="", level=1;
+let gameStarted = false;
+
+// Start game
+function startGame(){
+  gameStarted = true;
+  score = 0;
+  missed = 0;
+  level = 1;
+  wasteItems = [];
+  keys = {};
+  selectTargetBin();
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("gameOverScreen").style.display = "none";
+  document.getElementById("gameCanvas").style.display = "block";
+
+  clearIntervals();
+  spawnInterval = setInterval(spawnWaste, 1200);
+  gameInterval = setInterval(gameLoop, 30);
+}
+
+// Restart game
+function restartGame(){
+  startGame();
+}
+
+// Clear intervals
+function clearIntervals(){
+  if(spawnInterval) clearInterval(spawnInterval);
+  if(gameInterval) clearInterval(gameInterval);
+}
+
+// Select random target bin
+function selectTargetBin(){
+  const bins = Object.keys(wasteTypes);
+  targetBin = bins[Math.floor(Math.random()*bins.length)];
+}
+
+// Spawn random waste
+function spawnWaste(){
+  const types = Object.keys(wasteTypes);
+  const type = types[Math.floor(Math.random()*types.length)];
+  const emojiArray = wasteTypes[type];
+  const emoji = emojiArray[Math.floor(Math.random()*emojiArray.length)];
+  wasteItems.push({
+    x: Math.random()*(canvas.width-30),
+    y: -30,
+    emoji: emoji,
+    type: type,
+    speed: 2 + Math.random()*2 + level*0.5
+  });
+}
+
+// Draw basket
+function drawBasket(){
+  ctx.fillStyle="brown";
+  ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+  ctx.strokeStyle="#654321";
+  ctx.lineWidth=3;
+  ctx.strokeRect(basket.x, basket.y, basket.width, basket.height);
+}
+
+// Draw target bin
+function drawTargetBin(){
+  ctx.fillStyle="black";
+  ctx.font="22px Comic Sans MS";
+  ctx.fillText(`Level ${level} - Collect: ${targetBin}`, 10, 30);
+}
+
+// Draw waste
+function drawWaste(){
+  ctx.font="30px Arial";
+  wasteItems.forEach(w=>{
+    ctx.fillText(w.emoji, w.x, w.y);
+    w.y += w.speed;
+  });
+}
+
+// Move basket
+function moveBasket(){
+  if(keys["ArrowLeft"] && basket.x>0) basket.x -= basket.speed;
+  if(keys["ArrowRight"] && basket.x + basket.width < canvas.width) basket.x += basket.speed;
+}
+
+// Collision detection
+function checkCollision(){
+  if(!wasteItems.length) return; // skip if no waste
+
+  for(let i=wasteItems.length-1;i>=0;i--){
+    let w=wasteItems[i];
+    if(w.y+30 >= basket.y && w.y <= basket.y+basket.height && w.x+15 >= basket.x && w.x+15 <= basket.x+basket.width){
+      if(w.type === targetBin){
+        score += 10;
+      } else {
+        score -= 5;
+      }
+      wasteItems.splice(i,1);
+    } else if(w.y > canvas.height){
+      if(w.type === targetBin) missed++;
+      wasteItems.splice(i,1);
+    }
+  }
+
+  if(score >= level*50){
+    level++;
+    selectTargetBin();
+  }
+
+  if(missed >= 5) endGame();
+}
+
+// Draw score
+function drawScore(){
+  ctx.fillStyle="black";
+  ctx.font="20px Comic Sans MS";
+  ctx.fillText(`Score: ${score}`,10,60);
+  ctx.fillText(`Missed: ${missed}`,10,90);
+}
+
+// Game loop
+function gameLoop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!gameStarted) return;
+  drawTargetBin();
+  drawBasket();
+  drawWaste();
+  drawScore();
+  moveBasket();
+  checkCollision();
+}
+
+// End game
+function endGame(){
+  clearIntervals();
+  gameStarted = false;
+  document.getElementById("finalScore").innerText = "Your Score: "+score;
+  document.getElementById("gameOverScreen").style.display="block";
+  document.getElementById("gameCanvas").style.display="none";
+}
+
+// Controls
+document.addEventListener("keydown", e=>keys[e.key]=true);
+document.addEventListener("keyup", e=>keys[e.key]=false);
+
+// Buttons
+document.getElementById("startBtn").addEventListener("click", startGame);
+document.getElementById("restartBtn").addEventListener("click", restartGame);
+</script>
+</body>
+</html>

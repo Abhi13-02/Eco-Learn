@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Eco Runner</title>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+<style>
+  body { margin:0; overflow:hidden; font-family:sans-serif; background:#e0f7fa; }
+</style>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  physics: { default:'arcade', arcade:{ gravity:{y:500}, debug:false } },
+  scene:{ preload, create, update }
+};
+
+const game = new Phaser.Game(config);
+
+let player, cursors, score=0, scoreText;
+let collectibles, obstacles;
+let laneY = [450,400,350];
+let spawnDistance = 800;
+let gameEnded = false;
+let jumps = 0;
+const maxJumps = 2;
+let gameStarted = false;
+let obstaclesHit = 0;
+const maxObstacleHits = 10;
+let groundGroup;
+
+const collectibleEmojis = [
+  {emoji:"🌳", text:"Plant trees"}, {emoji:"♻", text:"Recycle"}, {emoji:"💧", text:"Save water"},
+  {emoji:"🚲", text:"Use bicycle/walk"}, {emoji:"🌞", text:"Use sunlight"}, {emoji:"🥕", text:"Eat less packaged food"}
+];
+
+const obstacleEmojis = [
+  {emoji:"💨", text:"Waste electricity"}, {emoji:"🗑", text:"Littering"}, {emoji:"🔥", text:"Burn trash"},
+  {emoji:"🚗", text:"Excess car use"}, {emoji:"🛢", text:"Oil/fuel waste"}, {emoji:"🏭", text:"Factory emissions"}
+];
+
+function preload(){
+  this.load.image('ground','https://labs.phaser.io/assets/sprites/platform.png');
+  this.load.image('player','https://labs.phaser.io/assets/sprites/phaser-dude.png');
+}
+
+function getRandomItems(arr,n){
+  let copy = arr.slice(), result=[];
+  for(let i=0;i<n;i++){
+    let idx=Math.floor(Math.random()*copy.length);
+    result.push(copy.splice(idx,1)[0]);
+  }
+  return result;
+}
+
+function create(){
+  // Start panel
+  const panel = this.add.rectangle(400,300,760,480,0xffffff,0.95).setStrokeStyle(3,0x004d40);
+
+  const title = this.add.text(400,70,"🌿 Eco Runner 🌿",{fontSize:'42px',fill:'#006400',fontStyle:'bold'}).setOrigin(0.5);
+  const desc = this.add.text(400,130,"Random obstacles and collectibles each game!\nMake eco-friendly decisions to score points.",{
+    fontSize:'18px',fill:'#004d40',align:'center',wordWrap:{width:700}
+  }).setOrigin(0.5);
+  const instructions = this.add.text(400,180,"✅ Collect good habits (+10) and ❌ avoid bad habits (-15).",{fontSize:'20px',fill:'#000',fontStyle:'bold'}).setOrigin(0.5);
+
+  // Pick 5 random collectibles and obstacles
+  const pickedCollectibles = getRandomItems(collectibleEmojis,5);
+  const pickedObstacles = getRandomItems(obstacleEmojis,5);
+
+  // Column headers
+  this.add.text(200,230,"Good Habits",{fontSize:'22px',fill:'#00796b',fontStyle:'bold'}).setOrigin(0.5);
+  this.add.text(600,230,"Bad Habits",{fontSize:'22px',fill:'#c62828',fontStyle:'bold'}).setOrigin(0.5);
+
+  // Display collectibles in left column
+  pickedCollectibles.forEach((item,i)=>{
+    let row = i;
+    let x = 200;
+    let y = 270 + row*60;
+    this.add.text(x,y,`${item.emoji} ${item.text}`,{fontSize:'18px',fill:'#fff',backgroundColor:'#26a69a',padding:8}).setOrigin(0.5);
+  });
+
+  // Display obstacles in right column
+  pickedObstacles.forEach((item,i)=>{
+    let row = i;
+    let x = 600;
+    let y = 270 + row*60;
+    this.add.text(x,y,`${item.emoji} ${item.text}`,{fontSize:'18px',fill:'#fff',backgroundColor:'#e53935',padding:8}).setOrigin(0.5);
+  });
+
+  // START button fixed below panel
+  const startButton = this.add.text(400,520,"START",{fontSize:'36px',fill:'#fff',backgroundColor:'#00796b',padding:12,fontStyle:'bold'}).setOrigin(0.5).setInteractive();
+  startButton.on('pointerdown',()=>{
+    [panel,title,desc,instructions,startButton].forEach(t=>t.destroy());
+    this.children.list.filter(c=>c.type==='Text' && (c.y>=230)).forEach(t=>t.destroy());
+    gameStarted=true;
+    setupGame.call(this);
+  });
+}
+
+function setupGame(){
+  groundGroup = this.physics.add.staticGroup();
+  for(let i=0;i<10;i++) groundGroup.create(i*400,580,'ground').setScale(2).refreshBody();
+
+  player = this.physics.add.sprite(100,laneY[1],'player').setScale(1.2);
+  player.setCollideWorldBounds(true);
+  player.currentLane = 1;
+
+  cursors = this.input.keyboard.createCursorKeys();
+
+  collectibles = this.physics.add.staticGroup();
+  obstacles = this.physics.add.staticGroup();
+
+  this.physics.add.collider(player,groundGroup);
+  this.physics.add.overlap(player,collectibles,collectItem,null,this);
+  this.physics.add.overlap(player,obstacles,hitObstacle,null,this);
+
+  this.physics.world.setBounds(0,0,Number.MAX_SAFE_INTEGER,600);
+  this.cameras.main.setBounds(0,0,Number.MAX_SAFE_INTEGER,600);
+  this.cameras.main.startFollow(player);
+
+  scoreText=this.add.text(16,16,'Score: 0',{fontSize:'24px',fill:'#000',backgroundColor:'#fff'}).setScrollFactor(0).setDepth(1000);
+}
+
+function update(){
+  if(!gameStarted||gameEnded) return;
+  player.setVelocityX(200);
+
+  if(Phaser.Input.Keyboard.JustDown(cursors.up)){
+    if(player.body.touching.down || jumps < maxJumps){player.setVelocityY(-350); jumps++;}
+  }
+  if(player.body.touching.down) jumps=0;
+
+  if(Phaser.Input.Keyboard.JustDown(cursors.left) && player.currentLane>0){
+    player.currentLane--; player.y=laneY[player.currentLane];
+  }
+  if(Phaser.Input.Keyboard.JustDown(cursors.right) && player.currentLane<2){
+    player.currentLane++; player.y=laneY[player.currentLane];
+  }
+
+  groundGroup.getChildren().forEach(g=>{if(g.x+g.displayWidth/2<player.x-400){g.x+=400*groundGroup.getChildren().length; g.refreshBody();}});
+
+  while(spawnDistance<player.x+1200){
+    let lane=Phaser.Math.Between(0,2);
+    let yPos=laneY[lane];
+    if(Math.random()<0.6){
+      let item=collectibleEmojis[Phaser.Math.Between(0,collectibleEmojis.length-1)];
+      let itemBody=collectibles.create(spawnDistance,yPos,null).setSize(32,32).setOrigin(0.5,1); itemBody.visible=false;
+      let itemText=this.add.text(spawnDistance,yPos,item.emoji,{fontSize:'28px'}).setOrigin(0.5,1);
+      itemBody.emojiText=itemText;
+    }else{
+      let obs=obstacleEmojis[Phaser.Math.Between(0,obstacleEmojis.length-1)];
+      let obsBody=obstacles.create(spawnDistance,yPos,null).setSize(32,32).setOrigin(0.5,1); obsBody.visible=false;
+      let obsText=this.add.text(spawnDistance,yPos,obs.emoji,{fontSize:'32px'}).setOrigin(0.5,1);
+      obsBody.emojiText=obsText; obsBody.hit=false;
+    }
+    spawnDistance += Phaser.Math.Between(150,250);
+  }
+}
+
+function collectItem(player,eco){
+  if(eco.emojiText) eco.emojiText.destroy();
+  eco.destroy();
+  score+=10; scoreText.setText('Score: '+score);
+}
+
+function hitObstacle(player,obs){
+  if(!obs.hit){
+    if(obs.emojiText) obs.emojiText.destroy();
+    obs.destroy();
+    score-=15;
+    obstaclesHit++;
+    scoreText.setText('Score: '+score);
+    if(obstaclesHit>=maxObstacleHits){
+      player.setVelocityX(0);
+      gameEnded=true;
+      showEndScreen(this,'You made 10 unsustainable choices!');
+    }
+    obs.hit=true;
+  }
+}
+
+function showEndScreen(scene,message){
+  let cam=scene.cameras.main;
+  let centerX=cam.worldView.x+cam.width/2;
+  let centerY=cam.worldView.y+cam.height/2;
+
+  scene.add.text(centerX,centerY-60,'GAME OVER',{fontSize:'50px',fill:'#ff0000',fontStyle:'bold'}).setOrigin(0.5);
+  scene.add.text(centerX,centerY,message,{fontSize:'28px',fill:'#fff',backgroundColor:'#ff0000',padding:5}).setOrigin(0.5);
+  scene.add.text(centerX,centerY+60,'Your Score: '+score,{fontSize:'28px',fill:'#006400',backgroundColor:'#fff',padding:5}).setOrigin(0.5);
+}
+</script>
+</body>
+</html>
